@@ -36,8 +36,10 @@ def b_func(x0, tod, tod_mask, pix, nside, bl):
     m = maps.Maps(nside)
     # m = (A^T A)^-1 A^T d
     if tod_mask is not None:
-        tod_mask = tod_mask.reshape(-1)
-    m.tod2map(tod.reshape(-1), tod_mask, pix.reshape(-1))
+        tod_mask1 = tod_mask.reshape(-1)
+    else:
+        tod_mask1 = None
+    m.tod2map(tod.reshape(-1), tod_mask1, pix.reshape(-1))
     # d1 = A m
     tod1 = m.map2tod(pix)
 
