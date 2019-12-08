@@ -4,7 +4,10 @@ import numpy as np
 class Maps(object):
 
     def __init__(self, nside=256, dtype=np.float64):
-        self.nside = nside
+        if isinstance(nside, int) or (isinstance(nside, tuple) and len(nside) == 2):
+            self.nside = nside
+        else:
+            raise ValueError('nside must be an integer or a tuple of two integers')
         self.dtype = dtype
 
     @property
@@ -33,9 +36,12 @@ class Maps(object):
     @property
     def full_map(self):
         """The full healpix map."""
-        temp_m = np.full(12*self.nside**2, np.nan, self.dtype)
+        if isinstance(self.nside, tuple):
+            temp_m = np.full(self.nside, np.nan, self.dtype)
+        else:
+            temp_m = np.full(12*self.nside**2, np.nan, self.dtype)
         try:
-            temp_m[self._pix] = self.m
+            temp_m.flat[self._pix] = self.m
         except AttributeError:
             pass
 
@@ -62,4 +68,4 @@ class Maps(object):
 
     def map2tod(self, pix):
         """Resample the map to time ordered data, d = A m."""
-        return self.full_map[pix]
+        return self.full_map.flat[pix]
