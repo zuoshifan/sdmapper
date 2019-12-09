@@ -16,7 +16,7 @@ def Ax_func(m0, Am, tod, psd, pix, nside):
     Nid = np.fft.ifft(np.fft.fft(d) / psd).real
 
     # get A^T N^-1 d
-    m.tod2map(Nid, None, pix)
+    m.tod2map(Nid, None, pix, normalize=False)
     Am[:] = m.m
 
 
@@ -27,7 +27,7 @@ def b_func(x0, tod, psd, pix, nside):
 
     m = maps.Maps(nside)
     # get A^T N^-1 d
-    m.tod2map(Nid, None, pix)
+    m.tod2map(Nid, None, pix, normalize=False)
 
     return m.m
 

@@ -15,7 +15,7 @@ class Maps(object):
         """The clean map."""
         # cm = (A^T A)^-1 A^T d
         try:
-            return self._cm
+            return self._m
         except AttributeError:
             print 'WARN: No map yet, cal `tod2map` to generate dirty map first'
             raise
@@ -24,14 +24,14 @@ class Maps(object):
         """Set the map and its corresponding pixels."""
         unique_pix = np.unique(pix)
         if len(m) == len(unique_pix):
-            self._cm = m
+            self._m = m
             self._pix = unique_pix
         else:
             raise ValueError("Map and pixel don't mach")
 
     def clear_map(self):
         """Clear the map."""
-        del self._cm
+        del self._m
 
     @property
     def full_map(self):
@@ -47,7 +47,7 @@ class Maps(object):
 
         return temp_m
 
-    def tod2map(self, tod, tod_mask, pix):
+    def tod2map(self, tod, tod_mask, pix, normalize=True):
         """Make map from the given time ordered data."""
         self._pix, pix_inverse = np.unique(pix, return_inverse=True)
 
@@ -64,7 +64,12 @@ class Maps(object):
                 c[pi] += 1
 
         # the clean map
-        self._cm = np.where(c > 0, dm / c, np.nan)
+        if normalize:
+            # clean map: cm = (A^T A)^-1 A^T d
+            self._m = np.where(c > 0, dm / c, np.nan)
+        else:
+            # dirty map: dm = A^T d
+            self._m = np.where(c > 0, dm, np.nan)
 
     def map2tod(self, pix):
         """Resample the map to time ordered data, d = A m."""
