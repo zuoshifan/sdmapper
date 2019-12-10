@@ -1,4 +1,6 @@
 import numpy as np
+import cg
+# from scipy.sparse import linalg as sla
 
 
 class Maps(object):
@@ -47,30 +49,28 @@ class Maps(object):
 
         return temp_m
 
-    def tod2map(self, tod, tod_mask, pix, normalize=True):
+    def tod2map(self, tod, A, pix, normalize=True):
         """Make map from the given time ordered data."""
-        self._pix, pix_inverse = np.unique(pix, return_inverse=True)
-
+        self._pix = pix
         npix = len(self._pix)
-        # to save the dirty map dm = A^T d
-        dm = np.zeros(npix, dtype=self.dtype)
-        # to save the count of each pixel
-        c = np.zeros(npix, dtype=np.int)
 
-        for i in range(len(pix)):
-            if (tod_mask is None) or (not tod_mask[i]):
-                pi = pix_inverse[i]
-                dm[pi] += tod[i]
-                c[pi] += 1
+        # dirty map: dm = A^T d
+        self._m = A.T.dot(tod)
 
-        # the clean map
         if normalize:
             # clean map: cm = (A^T A)^-1 A^T d
-            self._m = np.where(c > 0, dm / c, np.nan)
-        else:
-            # dirty map: dm = A^T d
-            self._m = np.where(c > 0, dm, np.nan)
+            # self._m[:], _ = sla.cg(A.T.dot(A), self._m, self._m)
+            self._m[:] = cg.cg_solver(np.zeros_like(self._m), Ax_func, b_func, args=(A, self._m), max_iter=10000, tol=0.0001)
 
-    def map2tod(self, pix):
+    def map2tod(self, A, pix):
         """Resample the map to time ordered data, d = A m."""
-        return self.full_map.flat[pix]
+        return A.dot(self.full_map.flat[pix])
+
+
+def Ax_func(x, Ax, A, b):
+    # (A^T A) x
+    Ax[:] = A.T.dot(A.dot(x))
+
+def b_func(x, A, b):
+    # b = A^T d
+    return b
